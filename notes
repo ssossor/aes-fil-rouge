@@ -1,0 +1,3 @@
+compile :
+
+gcc main.c aes.c utils.c sbox.c -o aes
