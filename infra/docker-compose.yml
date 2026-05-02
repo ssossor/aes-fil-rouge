@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  web:
+    build: ./web_server
+    ports:
+      - "8000:8000"
+
+  reverse:
+    build: ./reverse_proxy
+    ports:
+      - "9000:9000"
+    depends_on:
+      - web
+
+  outgoing:
+    build: ./outgoing_proxy
+    ports:
+      - "8080:8080"
+    depends_on:
+      - reverse
