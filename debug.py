@@ -1,4 +1,5 @@
 import subprocess
+import random
 from Crypto.Cipher import AES
 from binascii import unhexlify, hexlify
 
@@ -11,7 +12,7 @@ def aes_cli_encrypt(key: bytes, block: bytes) -> bytes:
     key_hex = hexlify(key).decode()
     block_hex = hexlify(block).decode()
 
-    result = subprocess.run(["./aes", key_hex, block_hex], capture_output=True, text=True)
+    result = subprocess.run(["./aes", "-encrypt", key_hex, block_hex], capture_output=True, text=True)
 
     if result.returncode != 0:
         raise RuntimeError(f"aes failed: {result.stderr.strip()}")
@@ -20,7 +21,25 @@ def aes_cli_encrypt(key: bytes, block: bytes) -> bytes:
 
     return unhexlify(output_hex)
 
-def aes_python(key: bytes, block: bytes) -> bytes:
+def aes_cli_decrypt(key: bytes, block: bytes) -> bytes:
+    if len(key) != 32:
+        raise ValueError("Key must be 32 bytes (AES-256)")
+    if len(block) != 16:
+        raise ValueError("Block must be 16 bytes")
+
+    key_hex = hexlify(key).decode()
+    block_hex = hexlify(block).decode()
+
+    result = subprocess.run(["./aes", "-decrypt", key_hex, block_hex], capture_output=True, text=True)
+
+    if result.returncode != 0:
+        raise RuntimeError(f"aes failed: {result.stderr.strip()}")
+
+    output_hex = result.stdout.strip()
+
+    return unhexlify(output_hex)
+
+def aes_python_encrypt(key: bytes, block: bytes) -> bytes:
     if len(key) != 32:
         raise ValueError("Key must be 32 bytes (AES-256)")
     if len(block) != 16:
@@ -30,16 +49,31 @@ def aes_python(key: bytes, block: bytes) -> bytes:
 
     return cipher.encrypt(block)
 
+def aes_python_decrypt(key: bytes, block: bytes) -> bytes:
+    if len(key) != 32:
+        raise ValueError("Key must be 32 bytes (AES-256)")
+    if len(block) != 16:
+        raise ValueError("Block must be 16 bytes")
+
+    cipher = AES.new(key, AES.MODE_ECB)
+
+    return cipher.decrypt(block)
 
 
-key_hex = "603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4"
+def unit_tests():
+    for i in range(100):
+        key = random.randbytes(32)
+        block = random.randbytes(16)
 
-block_hex = "6bc1bee22e409f96e93d7e117393172a"
+        aes_cli_encrypted_block = aes_cli_encrypt(key, block)
+        aes_python_encrypted_block = aes_python_encrypt(key, block)
 
-key = unhexlify(key_hex)
-block = unhexlify(block_hex)
+        assert aes_cli_encrypted_block == aes_python_encrypted_block, "Unit tests failed on encryption at iteration : " + str(i)
 
+        aes_cli_decrypted_block = aes_cli_decrypt(key, aes_cli_encrypted_block)
 
-print(aes_python(key, block))
+        assert aes_cli_decrypted_block == block, "Unit tests failed on decryption at iteration : " + str(i)
 
-print(aes_cli_encrypt(key, block))
+    print("Unit tests succeded !")
+
+unit_tests()

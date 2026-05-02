@@ -7,6 +7,9 @@
 extern void sub_bytes(uint8_t*);
 extern void shift_rows(uint8_t*);
 extern void mix_columns(uint8_t*);
+extern void inv_sub_bytes(uint8_t*);
+extern void inv_shift_rows(uint8_t*);
+extern void inv_mix_columns(uint8_t*);
 extern void add_round_key(uint8_t*, const uint8_t*);
 extern uint8_t sbox[256];
 
@@ -56,6 +59,26 @@ void aes256_encrypt_block(const uint8_t *input, uint8_t *output, const uint8_t *
     sub_bytes(state);
     shift_rows(state);
     add_round_key(state, roundKeys + AES_256_ROUNDS*16);
+
+    memcpy(output, state, 16);
+}
+
+void aes256_decrypt_block(const uint8_t *input, uint8_t *output, const uint8_t *roundKeys) {
+    uint8_t state[16];
+    memcpy(state, input, 16);
+
+    add_round_key(state, roundKeys + AES_256_ROUNDS * 16);
+
+    for(int round = AES_256_ROUNDS - 1; round > 0; round--) {
+        inv_shift_rows(state);
+        inv_sub_bytes(state);
+        add_round_key(state, roundKeys + round * 16);
+        inv_mix_columns(state);
+    }
+
+    inv_shift_rows(state);
+    inv_sub_bytes(state);
+    add_round_key(state, roundKeys);
 
     memcpy(output, state, 16);
 }

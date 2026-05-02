@@ -1,3 +1,8 @@
 compile :
 
 gcc main.c aes.c utils.c sbox.c -o aes
+
+test : 
+
+./aes -encrypt 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 6bc1bee22e409f96e93d7e117393172a
+./aes -decrypt 603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4 f3eed1bdb5d2a03c064b5a7e3db181f8
